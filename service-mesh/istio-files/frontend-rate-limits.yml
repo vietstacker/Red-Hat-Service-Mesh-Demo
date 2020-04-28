@@ -1,0 +1,54 @@
+apiVersion: config.istio.io/v1alpha2
+kind: memquota
+metadata:
+  name: handler
+spec:
+  quotas:
+  - name: requestcount.quota.userX
+    maxAmount: 10
+    validDuration: 60s
+---
+apiVersion: config.istio.io/v1alpha2
+kind: quota
+metadata:
+  name: requestcount
+spec:
+  dimensions:
+    source: request.headers["x-forwarded-for"] | "unknown"
+    destination: destination.labels["app"] | destination.service.name | "unknown"
+    destinationVersion: destination.labels["version"] | "unknown"
+---
+apiVersion: config.istio.io/v1alpha2
+kind: QuotaSpec
+metadata:
+  name: request-count
+spec:
+  rules:
+  - quotas:
+    - charge: 1
+      quota: requestcount
+---
+apiVersion: config.istio.io/v1alpha2
+kind: QuotaSpecBinding
+metadata:
+  name: request-count
+spec:
+  quotaSpecs:
+  - name: request-count
+  services:
+  - name: frontend
+    #  - service: '*'  # Uncomment this to bind *all* services to request-count
+---
+apiVersion: config.istio.io/v1alpha2
+kind: rule
+metadata:
+  name: quota
+spec:
+  # quota will not applied if header foo = bar
+  match: match(request.headers["foo"],"bar") == false
+  actions:
+  - handler: handler.memquota
+    instances:
+    - requestcount.quota
+# Confirm quota instance
+# oc -n ${USERID} get instance requestcountquota -o yaml

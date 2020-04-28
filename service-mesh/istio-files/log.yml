@@ -1,0 +1,60 @@
+# Log entry for egress access
+apiVersion: "config.istio.io/v1alpha2"
+kind: logentry
+metadata:
+  name: egress-access
+spec:
+  severity: '"info"'
+  timestamp: request.time
+  variables:
+    destination: request.host | "unknown"
+    path: request.path | "unknown"
+    responseCode: response.code | 0
+    responseSize: response.size | 0
+    reporterUID: context.reporter.uid | "unknown"
+    sourcePrincipal: source.principal | "unknown"
+  monitored_resource_type: '"UNSPECIFIED"'
+---
+# Handler for error egress access entries
+apiVersion: "config.istio.io/v1alpha2"
+kind: stdio
+metadata:
+  name: egress-error-logger
+spec:
+ severity_levels:
+   info: 2 # output log level as error
+ outputAsJson: true
+---
+# Rule to handle access to *.redhat.com
+apiVersion: "config.istio.io/v1alpha2"
+kind: rule
+metadata:
+  name: handle-politics
+spec:
+  match: request.host.endsWith("redhat.com") && context.reporter.uid.startsWith("kubernetes://istio-egressgateway")
+  actions:
+  - handler: egress-error-logger.stdio
+    instances:
+    - egress-access.logentry
+---
+# Handler for info egress access entries
+apiVersion: "config.istio.io/v1alpha2"
+kind: stdio
+metadata:
+  name: egress-access-logger
+spec:
+  severity_levels:
+    info: 0 # output log level as info
+  outputAsJson: true
+---
+# Rule to handle access to *.cnn.com
+apiVersion: "config.istio.io/v1alpha2"
+kind: rule
+metadata:
+  name: handle-cnn-access
+spec:
+  match: request.host.endsWith("httpbin.org") && context.reporter.uid.startsWith("kubernetes://istio-egressgateway")
+  actions:
+  - handler: egress-access-logger.stdio
+    instances:
+      - egress-access.logentry
