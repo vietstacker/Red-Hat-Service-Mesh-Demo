@@ -14,8 +14,8 @@
 
 ## Frontend and Backend app
 
-Deploy microservices applications to OpenShift Container Platform 
-Observe automatic injection of Service Mesh sidecar into each microservice
+In this demo, we are going to deploy microservices applications to OpenShift Container Platform.
+When applications are deployed, Service Mesh sidecar will be injected into each microservice pod. In the nutshell, the sidecar term describes the configuration of the sidecare proxy that mediates inbound and outbound communication to the pod it is attached to.
 
 There are two microservices in this lab that you will deploy to OpenShift. In a later lab of this course, you will manage the interactions between these microservices using Red Hat OpenShift Service Mesh.
 
@@ -29,18 +29,56 @@ You start by deploying the catalog service to OpenShift. The sidecar proxy is au
 sidecar.istio.io/inject: "true"
 ```
 
-Check for annotation section in [deployment of backend v1](../ocp/backend-v1-deployment.yml)
+Create a yaml file as below or use the pre-prepared file for backed-v1 deployment [deployment of backend v1](../ocp/backend-v1-deployment.yml). Check the "annotations" section within yaml file, we can see how we use Service Mesh sidecar injection.
 
 ```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-v1
+  annotations:
+    app.openshift.io/vcs-ref: master
+    app.openshift.io/vcs-uri: 'https://gitlab.com/ocp-demo/backend_quarkus.git'
+  labels:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: backend
+    app.kubernetes.io/name: java
+    app.kubernetes.io/part-of: App-X
+    app.openshift.io/runtime: java
+    app.openshift.io/runtime-version: '8'
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+      version: v1
   template:
     metadata:
+      creationTimestamp: null
       labels:
         app: backend
         version: v1
       annotations:
         sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - name: backend
+        image: quay.io/voravitl/backend-native:v1
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "0.05"
+            memory: 40Mi
+          limits:
+            cpu: "0.2"
+            memory: 120Mi
+        env:
+          - name: APP_BACKEND
+            value: https://httpbin.org/status/200
+          - name: APP_VERSION
+            value: v1
+        ports:
+        - containerPort: 8080
 ```
 
 Review configuration of backend v1 and v2. 
