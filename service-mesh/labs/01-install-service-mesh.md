@@ -74,18 +74,12 @@ oc whoami --show-console
 
 Clone labs content to your working directory. Open your terminal (For OSX terminal, iTerm2, etc and CMD for Windows) then run following command
 
-Link to lab repository [Service Mesh Workshop](https://gitlab.com/workshop6/service-mesh.git)
+Link to lab repository [Service Mesh Workshop](https://github.com/vietstacker/Red-Hat-Service-Mesh-Demo)
 
 ```bash
-git clone https://gitlab.com/workshop6/service-mesh.git
+git clone https://github.com/vietstacker/Red-Hat-Service-Mesh-Demo
 ```
-
-If you don't have git, click this Link =>[Service Mesh Workshop](https://gitlab.com/workshop6/service-mesh)
-
-
-Download labs content by click following icon.
-
-![Dowload from Git](../images/download-from-git.png)
+All the yaml files of this demo are stored within this repository. You can use them as references.
 
 ### Projects for Control Plane and Demo Apps
 
@@ -219,8 +213,8 @@ oc get smmr -n ${USERID}-istio-system
 Sample output
 
 ```bash
-NAME      MEMBERS
-default   [user1]
+NAME      READY   STATUS       AGE
+default   1/1     Configured   88s
 ```
 
 
