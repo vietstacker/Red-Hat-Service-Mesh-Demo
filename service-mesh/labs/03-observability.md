@@ -18,9 +18,9 @@ Monitor your Istio service mesh with Kiali
 
 ## Review Service Mesh Monitoring
 
-At some point when you are developing your microservices architecture, you may want to visualize what is happening in your service mesh. You may have questions like “Which service is connected to which other service?” and “How much traffic goes to each microservice?” But because of the loosely tied nature of microservices architectures, these questions can be difficult to answer.
+When you are developing your microservices applications, you may want to visualize what is happening in your service mesh. You may have questions like “Which service is connected to which other services?” and “How much traffic goes to each microservice?” But because of the loosely tied nature of microservices architecture, these questions can be difficult to answer.
 
-Those are the kinds of question that Kiali has the ability to answer—by giving you a big picture of the mesh and showing the whole flow of your requests and data.
+Those are the kind of question that Kiali is able to answer by giving you a big picture of the service mesh and showing the whole flow of your requests and data.
 
 ## Explore Kiali
 
