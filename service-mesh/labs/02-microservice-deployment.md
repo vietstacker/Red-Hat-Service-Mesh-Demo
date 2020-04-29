@@ -21,8 +21,9 @@ There are two microservices in this lab that you will deploy to OpenShift. In a 
 
 ![Microservice Diagram](../images/microservices-initial.png)
 
+### Remark: All the resources of Frontend and Backend app have to be deployed in $USERID project which we have created before. Make sure that if you create the following yaml files, you have to apply them in $USERID project
 
-## Deploy Frontend and Backend app
+## Deploy Backend app
 You start by deploying the catalog service to OpenShift. The sidecar proxy is automatically injected by annotated deployment with 
 
 ```yaml
@@ -80,6 +81,57 @@ spec:
         ports:
         - containerPort: 8080
 ```
+Create a yaml file as below or use the pre-prepared file for backed-v2 deployment [deployment of backend v2](../ocp/backend-v2-deployment.yml).
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-v2
+  annotations:
+    app.openshift.io/vcs-ref: master
+    app.openshift.io/vcs-uri: 'https://gitlab.com/ocp-demo/backend_quarkus.git'
+  labels:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: backend
+    app.kubernetes.io/name: java
+    app.kubernetes.io/part-of: App-X
+    app.openshift.io/runtime: java
+    app.openshift.io/runtime-version: '8'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+      version: v2
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: backend
+        version: v2
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - name: backend
+        image: quay.io/voravitl/backend-native:v1
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "0.05"
+            memory: 60Mi
+          limits:
+            cpu: "0.2"
+            memory: 120Mi
+        env:
+          - name: APP_BACKEND
+            value: https://httpbin.org/delay/5
+          - name: APP_VERSION
+            value: v2
+        ports:
+        - containerPort: 8080
+```
 
 Review configuration of backend v1 and v2. 
 * Backend v1 is configured to call https://httpbin.org/status/200 
@@ -95,7 +147,110 @@ Review configuration of backend v1 and v2.
             value: https://httpbin.org/delay/5 
   ```
 
-### Deploy Applications
+Create a yaml file as below for Service of backend app [service of backend](../ocp/backend-service.yml).
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  ports:
+  - port: 8080
+    name: http
+    targetPort: 8080
+  selector:
+    app: backend
+```
+
+## Deploy Frontend app
+
+Create a yaml file as below for Frontend deployment and apply it. This yaml file is stored within ../ocp/frontend-v1-deployment.yml
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-v1
+  annotations:
+    app.openshift.io/vcs-ref: master
+    app.openshift.io/vcs-uri: 'https://gitlab.com/ocp-demo/frontend-js.git'
+  labels:
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/instance: frontend
+    app.kubernetes.io/name: nodejs
+    app.kubernetes.io/part-of: App-X
+    app.openshift.io/runtime: nodejs
+    app.openshift.io/runtime-version: '10'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: frontend
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - name: frontend
+        image: quay.io/voravitl/frontend-js:v1
+        imagePullPolicy: Always
+        env:
+          - name: BACKEND_URL
+            value: http://backend:8080
+        resources:
+          requests:
+            cpu: "0.1"
+            memory: 60Mi
+          limits:
+            cpu: "0.2"
+            memory: 100Mi
+        ports:
+        - containerPort: 8080
+```
+The below are Service and Route of the above Frontend app:
+
+Route.yaml
+
+```yaml
+apiVersion: v1
+kind: Route
+metadata:
+  name: frontend
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: frontend
+    weight: 100
+  wildcardPolicy: None
+```
+
+Service.yaml
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+spec:
+  ports:
+  - port: 8080
+    name: http
+    targetPort: 8080
+  selector:
+    app: frontend
+```
+### Remark: The whole files of Frontend and Backend app are stored within /ocp directory. You can easily apply them as below
 
 ```bash
 oc apply -f ocp/frontend-v1-deployment.yml -n $USERID
