@@ -21,7 +21,53 @@ Configure service mesh gateway to control traffic that entering mesh.
 ![Microservice with Ingress Diagram](../images/microservices-with-ingress.png)
 
 ## Setup
-
+Create a frontend-v2 as below. This file is also created as ocp/frontend-v2-deployment.yml:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-v2
+  annotations:
+    app.openshift.io/vcs-ref: master
+    app.openshift.io/vcs-uri: 'https://gitlab.com/ocp-demo/frontend-js.git'
+  labels:
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/instance: frontend
+    app.kubernetes.io/name: nodejs
+    app.kubernetes.io/part-of: App-X
+    app.openshift.io/runtime: nodejs
+    app.openshift.io/runtime-version: '10'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: frontend
+        version: v2
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - name: frontend
+        image: quay.io/voravitl/frontend-js:v2
+        imagePullPolicy: Always
+        env:
+          - name: BACKEND_URL
+            value: http://backend:8080
+        resources:
+          requests:
+            cpu: "0.1"
+            memory: 60Mi
+          limits:
+            cpu: "0.2"
+            memory: 100Mi
+        ports:
+        - containerPort: 8080
+```
 Deploy frontend v2 and remove backend v2
 
 ```bash
@@ -38,8 +84,24 @@ frontend-v2-5c4bf794bd-vnjk6   0/2     ContainerCreating   0          13s
 ```
 
 ## Istio Ingress Gateway
-
-Review the following Istio's Gateway rule configuration file [frontend-gateway.yml](../istio-files/frontend-gateway.yml)  to create Istio Gateway.
+An Istio Ingress Gateway describes a load balancer operating at the edge of the mesh that receives incoming HTTP/TCP connections. Create a Gateway using Istio IngressGateway as below:
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: frontend-gateway
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - '*'
+```
+This file is also stored in [frontend-gateway.yml](../istio-files/frontend-gateway.yml)
 
 Run oc apply command to create Istio Gateway.
 
