@@ -24,7 +24,7 @@ Routing within Service Mesh can be controlled by using Virtual Service and Routi
 
 <!-- /TOC -->
 
-<!-- Service Mesh Route rules control how requests are routed within service mesh.
+### Service Mesh Route rules control how requests are routed within service mesh.
 
 Requests can be routed based on the source and destination, HTTP header fields, and weights associated with individual service versions. For example, a route rule could route requests to different versions of a service.
 
