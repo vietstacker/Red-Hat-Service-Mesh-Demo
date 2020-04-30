@@ -172,7 +172,7 @@ Click YAML to view YAML file.
 ![Kiali View YAML](../images/kiali-view-yaml.png)
 
 
-### A/B Deployment Testing
+### Testing A/B Deployment
 
 After configuring traffic percent as above, let's test A/B testing by sending a batch of requests to the Frontend. Take a look to run-50.sh script
 [run-50.sh](../scripts/run-50.sh) as reference.
