@@ -259,8 +259,30 @@ Sample outout
 Frontend version: v2 => [Backend: http://backend:8080, Response: 200, Body: Backend version:v1, Response:200, Host:backend-v1-797cf7f7b4-b9lnh, Status:200, Message: Hello, World]
 ```
 
-You can also run script [run-50-foo-bar.sh](../scripts/run-50-foo-bar.sh) to generate round-robin request between frontend-v1 and frontend-v2
-
+You can also run script to generate round-robin request between frontend-v1 and frontend-v2
+ as below. The file is stored as [run-50-foo-bar.sh](../scripts/run-50-foo-bar.sh) 
+```bash
+#!/bin/sh
+COUNT=0
+MAX=50
+VERSION1=0
+VERSION2=0
+#TARGET_URL=$FRONTEND_URL
+TARGET_URL=$GATEWAY_URL
+while [ $COUNT -lt $MAX ];
+do
+  EVEN=$(expr $COUNT % 2)
+  if [ $EVEN -eq 0 ];
+  then
+    OUTPUT=$(curl -s -H foo:bar  $TARGET_URL )
+  else
+    OUTPUT=$(curl -s $TARGET_URL)
+  fi
+  VERSION=$(echo $OUTPUT|awk -F'=>' '{print $1}')
+  echo $VERSION
+  COUNT=$(expr $COUNT + 1)
+done
+```
 ```bash
 scripts/run-50-foo-bar.sh
 ```
@@ -291,6 +313,49 @@ Fault injection is strategy to test resiliency of your service.
 
 We will remove frontend v2 and update destination rule to not included frontend v2 and apply virtual service with fault injection when header foo is equal to bar
 
+Update Frontend DestinationRule
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: frontend-destination-rule
+spec:
+  host: frontend
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+```
+Update Frontend-virtual-service
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: frontend-virtual-service
+spec:
+  hosts:
+  - '*'
+  gateways:
+  - frontend-gateway
+  http:
+  - fault:
+      abort:
+        # Return HTTP 500 for every request
+        httpStatus: 500
+        percentage:
+          value: 100
+    # When header foo = bar
+    match:
+    - headers:
+        foo:
+          exact: bar
+    route:
+    - destination:
+        host: frontend
+  - route:
+    - destination:
+        host: frontend
+```
+Those files are also stored within istio-files
 ```bash
 oc apply -f istio-files/destination-rule-frontend.yml -n ${USERID}
 oc apply -f istio-files/virtual-service-frontend-fault-inject.yml -n $USERID
@@ -298,23 +363,6 @@ oc delete -f ocp/frontend-v2-deployment.yml -n ${USERID}
 watch oc get pods -n ${USERID}
 ```
 
-Check virtual service with fault injection
-
-```yaml
-...
-- fault:
-      abort:
-        #Return HTTP 500 for every request
-        httpStatus: 500
-        percentage:
-          value: 100
-    #When header foo = bar
-    match:
-    - headers:
-        foo:
-          exact: bar
-...
-```
 
 Check virtual service configuration in Kiali console
 
