@@ -122,9 +122,32 @@ gateway.networking.istio.io/frontend-gateway created
 ## Routing by incoming HTTP header
 
 ### Destination Rule
+We create a DestinationRule for routing traffic to Frontend from Ingress Gateway by matching label "app" and "version". This file is also stored within [destination-rule-frontend-v1-v2.yml](../istio-files/destination-rule-frontend-v1-v2.yml)  
 
-Review the following Istio's destination rule configuration file [destination-rule-frontend-v1-v2.yml](../istio-files/destination-rule-frontend-v1-v2.yml)  to define subset called v1 and v2 by matching label "app" and "version"
-
+DestinationRule.yml
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: frontend-destination-rule
+spec:
+  host: frontend
+  subsets:
+  - name: v1
+    labels:
+      app: frontend
+      version: v1
+    trafficPolicy:
+      loadBalancer:
+        simple: ROUND_ROBIN
+  - name: v2
+    labels:
+      app: frontend
+      version: v2
+    trafficPolicy:
+      loadBalancer:
+        simple: ROUND_ROBIN
+```
 
 Run oc apply command to create Istio Gateway.
 
@@ -139,10 +162,20 @@ destinationrule.networking.istio.io/frontend created
 ```
 
 ### Virtual Service
-Review the following Istio's  virtual service configuration file [virtual-service-frontend-header-foo-bar-to-v1.yml](../istio-files/virtual-service-frontend-header-foo-bar-to-v1.yml) to routing request to v1 if request container header name foo with value bar
+Create a new Istio's virtual service configuration file to configure routes for traffic comming from Gateway by matching headers "foo/bar". The yaml file is stored in [virtual-service-frontend-header-foo-bar-to-v1.yml](../istio-files/virtual-service-frontend-header-foo-bar-to-v1.yml)
 
 ```yaml
-- match:
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: frontend-virtual-service
+spec:
+  hosts:
+  - '*'
+  gateways:
+  - frontend-gateway
+  http:
+  - match:
     - headers:
         foo:
           exact: bar
@@ -150,6 +183,10 @@ Review the following Istio's  virtual service configuration file [virtual-servic
     - destination:
         host: frontend
         subset: v1
+  - route:
+    - destination:
+        host: frontend
+        subset: v2
 ```
 
 Run oc apply command to apply Istio virtual service policy.
