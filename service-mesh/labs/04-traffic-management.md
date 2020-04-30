@@ -277,11 +277,81 @@ Refer to [Verify Istio Config](#verify-istio-config) section. You can also edit 
 
 ## Dark Launch by Mirroring Traffic
 
-Mirror all request to backend to backend-v3
+Mirror all request to backend to a new "backend-v3" deployment.
 
 ![Mirror](../images/microservices-mirror.png)
 
-Run following command to create backend-v3
+Create yaml files of backend-v3. The deployment.yml is mostly the same as backend-v1, backend-v2 except the address to send request to from inside pod is itself "localhost" instead of httpbin.org.
+
+Deployment.yml
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-v3
+  annotations:
+    app.openshift.io/vcs-ref: master
+    app.openshift.io/vcs-uri: 'https://gitlab.com/ocp-demo/backend_quarkus.git'
+  labels:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: backend
+    app.kubernetes.io/name: java
+    app.kubernetes.io/part-of: App-X
+    app.openshift.io/runtime: java
+    app.openshift.io/runtime-version: '8'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-v3
+      version: v3
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: backend-v3
+        version: v3
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - name: backend
+        image: quay.io/voravitl/backend-native:v1
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "0.05"
+            memory: 40Mi
+          limits:
+            cpu: "0.2"
+            memory: 120Mi
+        env:
+          - name: app.backend
+            value: http://localhost:8080/version
+          - name: APP_VERSION
+            value: v3
+        ports:
+        - containerPort: 8080
+```
+
+Service.yml
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-v3
+  labels:
+    app: backend-v3
+spec:
+  ports:
+  - port: 8080
+    name: http
+    targetPort: 8080
+  selector:
+    app: backend-v3
+```
+
+These files are stored within ocp directory. You can run them to create backend-v3
 
 ```
 
@@ -292,9 +362,18 @@ oc apply -f ocp/backend-v3-service.yml -n $USERID
 
 **Remark: backend v3 create with app label backend-v3 and servive name backend-v3 then backend v3 is not included in backend service. You verify [backend-service.yml](../ocp/backend-service.yml) for this configuration**
 
-Review the following Istio's  virtual service configuration file [virtual-service-backend-v1-v2-mirror-to-v3.yml](../istio-files/virtual-service-backend-v1-v2-mirror-to-v3.yml) to mirror request to backend-v3
+We need to modify "backend-virtual-service" VirtualService created to add mirror to backend-v3. In this demo, a new file create to let user understand the difference between before and after modification of "backend-virtual-service" VirtualService. Otherwise, you can edit/patch the existing "backend-virtual-service" VirtualService to add mirror.
 
+mirror-to-v3.yml
 ```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: backend-virtual-service
+spec:
+  hosts:
+  - backend
+  http:
   - route:
     - destination:
         host: backend
@@ -307,6 +386,7 @@ Review the following Istio's  virtual service configuration file [virtual-servic
     mirror:
       host: backend-v3
 ```
+This file is stored in [virtual-service-backend-v1-v2-mirror-to-v3.yml](../istio-files/virtual-service-backend-v1-v2-mirror-to-v3.yml)
 
 Run oc apply command to apply Istio policy.
 
