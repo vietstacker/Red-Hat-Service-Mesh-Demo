@@ -15,7 +15,7 @@ Routing within Service Mesh can be controlled by using Virtual Service and Routi
   - [Apply Istio Policy for A/B deployment](#apply-istio-policy-for-ab-deployment)
   - [Create Routing Policy by Kiali Console](#create-routing-policy-by-kiali-console)
   - [Verify Istio Configuration](#verify-istio-configuration)
-  - [A/B Deployment Testing](#A/B Deployment Testing)
+  - [A/B Deployment Testing](#A/B-Deployment-Testing)
   - [Bonus: Play with Weight](#bonus-play-with-weight)
 - [Dark Launch by Mirroring Traffic](#dark-launch-by-mirroring-traffic)
 - [Set Envoy Access Log](#set-envoy-access-log)
@@ -281,7 +281,7 @@ Mirror all request to backend to a new "backend-v3" deployment.
 
 ![Mirror](../images/microservices-mirror.png)
 
-Create yaml files of backend-v3. The deployment.yml is mostly the same as backend-v1, backend-v2 except the address to send request to from inside pod is itself "localhost" instead of httpbin.org.
+Create yaml files of backend-v3. The service.yml is the same while the deployment.yml is mostly the same as backend-v1, backend-v2 except the address to send request to from inside pod is itself "localhost" instead of httpbin.org.
 
 Deployment.yml
 ```yaml
@@ -478,6 +478,9 @@ Each request contains 2 lines of log incoming request from application container
 - 35.170.216.115:443 => IP address of httpbin.org
 
 ## Cleanup
+In order to cleanup, you should run "oc delete -f $file" to delete resources defined within $file. It means that you should delete all the above .yml files that you have created. So, look for places where those files are located and run "oc delete -f $file".
+
+As these files are stored in this repo so you can easily run "oc delete" command as below
 
 Run oc delete command to remove Istio policy.
 
