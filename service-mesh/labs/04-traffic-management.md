@@ -15,7 +15,7 @@ Routing within Service Mesh can be controlled by using Virtual Service and Routi
   - [Apply Istio Policy for A/B deployment](#apply-istio-policy-for-ab-deployment)
   - [Create Routing Policy by Kiali Console](#create-routing-policy-by-kiali-console)
   - [Verify Istio Configuration](#verify-istio-configuration)
-  - [A/B Deployment Testing](#A/B-Deployment-Testing)
+  - [Testing A/B Deployment](#testing-A/B-Deployment)
   - [Bonus: Play with Weight](#bonus-play-with-weight)
 - [Dark Launch by Mirroring Traffic](#dark-launch-by-mirroring-traffic)
 - [Set Envoy Access Log](#set-envoy-access-log)
