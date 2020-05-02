@@ -33,14 +33,14 @@ You will get output similar to this
 ```yaml
 mode: ALLOW_ANY
 ```
-We can change this behavior of Istio to **locking-by-default** policy by change from *ALLOW_ANY* to *REGISTRY_ONLY. The mode *REGISTRY_ONLY* ONLY allows outbound traffic to services defined in the service registry as well as those defined through ServiceEntries. Modify the Istio ConfigMap to change to *REGISTRY_ONLY*:
+We can change this behavior of Istio to **locking-by-default** policy by change from *ALLOW_ANY* to *REGISTRY_ONLY*. The mode *REGISTRY_ONLY* ONLY allows outbound traffic to services defined in the service registry as well as those defined through ServiceEntries. Modify the Istio ConfigMap to change to *REGISTRY_ONLY*:
 
 ```bash
  oc get configmap istio -n ${USERID}-istio-system -o yaml \
   | sed 's/mode: ALLOW_ANY/mode: REGISTRY_ONLY/g' \
   | oc replace -n ${USERID}-istio-system -f -
 ```
-Test with cURL
+Test with cURL to Frontend.
 ```bash
 curl -v ${FRONTEND_URL}
 
@@ -52,7 +52,7 @@ Run [run-50.sh](../scripts/run-50.sh) and Check Kiali Console Graph
 ![Kiali Console REGISTRY_ONLY](../images/kiali-console-egress-registry-only.png)
 
 ### Service Entry
-Create ServiceEntry to allow egress traffic to httpbin.org and allow only HTTPS and port 443. 
+As we can see that REGISTRY_ONLY mode does not allow all the traffics. In order to allow those traffics to external addresses, we need to create ServiceEntry resource. Let create a ServiceEntry to allow egress traffic to httpbin.org and allow only HTTPS and port 443. 
 
 Check for [egress-serviceentry.yml](../istio-files/egress-serviceentry.yml)
 ```yaml
@@ -71,7 +71,8 @@ spec:
   location: MESH_EXTERNAL
 ```
 
-Apply [egress-serviceentry.yml](../istio-files/egress-serviceentry.yml) and test cURL
+This file is also created and stored in [egress-serviceentry.yml](../istio-files/egress-serviceentry.yml).
+Test again with cURL to Frontend
 ```bash
 oc apply -f istio-files/egress-serviceentry.yml -n $USERID
 curl ${FRONTEND_URL}
