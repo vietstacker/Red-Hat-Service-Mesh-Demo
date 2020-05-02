@@ -112,7 +112,7 @@ Check Graph in Kiali Console with Response time.
 
 
 ## Cleanup
-Run oc delete command to remove Istio policy.
+Run oc delete command to remove Istio policy. Make sure to delete the below resources before moving on to the next topic
 
 ```bash
 oc delete -f istio-files/virtual-service-backend-v1-v2-80-20.yml -n $USERID
