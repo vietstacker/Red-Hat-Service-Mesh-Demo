@@ -14,16 +14,7 @@
 
 ## Setup
 
-Deploy Frontend and Backend App 
-```bash
-oc apply -f ocp/frontend-v1-deployment.yml -n $USERID
-oc apply -f ocp/frontend-service.yml -n $USERID
-oc apply -f ocp/frontend-route.yml -n $USERID
-oc apply -f ocp/backend-v1-deployment.yml -n $USERID
-oc apply -f ocp/backend-v2-deployment.yml -n $USERID
-oc apply -f ocp/backend-service.yml -n $USERID
-```
-or just run [deploy.sh](../scripts/deploy.sh) shell script
+Deploy Frontend and Backend App. Make sure that frontend-v1, frontend-service, frontend-route, backend-v1/v2, backend-service are created as in previous labs. These file are also stored in /ocp directory. Apply those files or just run [deploy.sh](../scripts/deploy.sh) shell script
 ```bash
 scripts/deploy.sh
 ```
@@ -32,7 +23,7 @@ scripts/deploy.sh
 
 ### ALLOW_ANY or REGISTRY_ONLY
 
-By default Istio allow request go outside Service Mesh. This configuration is in configmap **istio** within Istio Control Plane project.
+By default Istio allows requests to go outside Service Mesh. This configuration is in configmap **istio** within Istio Control Plane project.
 
 Check configmap **istio**
 ```bash
@@ -42,7 +33,7 @@ You will get output similar to this
 ```yaml
 mode: ALLOW_ANY
 ```
-We can change this behavior of Istio to **locking-by-default** policy by change from *ALLOW_ANY* to *REGISTRY_ONLY* by run following command
+We can change this behavior of Istio to **locking-by-default** policy by change from *ALLOW_ANY* to *REGISTRY_ONLY. The mode *REGISTRY_ONLY* ONLY allows outbound traffic to services defined in the service registry as well as those defined through ServiceEntries. Modify the Istio ConfigMap to change to *REGISTRY_ONLY*:
 
 ```bash
  oc get configmap istio -n ${USERID}-istio-system -o yaml \
