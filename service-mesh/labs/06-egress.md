@@ -90,9 +90,10 @@ Reconfigure istio configmap back to ALLOW_ANY
   | oc replace -n ${USERID}-istio-system -f -
 ```
 
-Run oc delete command to remove Istio policy.
+Delete the Egress ServiceEntry created before or just run "oc delete" command with yaml file of ServiceEntry stored within istio-files.
+
 ```bash
-oc delete -f istio-files/egress-serviceentry -n $USERID
+oc delete -f istio-files/egress-serviceentry.yml -n $USERID
 
 ```
 
