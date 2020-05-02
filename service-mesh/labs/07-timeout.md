@@ -66,7 +66,7 @@ spec:
     trafficPolicy:
       loadBalancer:
         simple: ROUND_ROBIN
-``
+```
 These yaml files are stored in /istio-files directory.
 
 Test again with cURL and check for 504 response code from backend version v2
