@@ -18,14 +18,12 @@ In our lab, we will simulate that one pod of backend service has some error. We 
 
 ## Setup
 
-Setup microservices apps by remove backend-v2 and scale backend-v1 to 3 pods. 
+Setup microservices apps by delete backend-v2 (if existed) and scale backend-v1 to 2 pods. Look back to previous labs and make sure the resources in the below pictures are created.
 
 ![microservices circuit brekaer](../images/microservices-circuit-breaker.png)
 
 ```bash
-oc delete -f ocp/backend-v2-deployment.yml -n $USERID
 oc scale deployment backend-v1 --replicas=2 -n $USERID
-watch oc get pods -n $USERID
 
 #or 
 #oc get pods -w -n $USERID
