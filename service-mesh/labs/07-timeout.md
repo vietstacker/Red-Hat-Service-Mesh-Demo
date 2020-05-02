@@ -14,6 +14,8 @@
 
 Currently backend v2 is set to delay response in 6 sec. We will set backend virtual service to wait for 3 sec (timeout 3 sec).  Frontend will received HTTP response with Gateway Timeout (504) if elapsed time is longer than timeout period.
 
+NOTE: Before moving on, make sure that the egress traffic mode of Istio is configured back to ALLOW_ANY and ServiceEntry is deleted from lab 6.
+
 ![Timeout 3s](../images/microservices-timeout-3s.png)
 
 Again, make sure that frontend-v1 deployment, frontend service, frontend route, backend-v1/v2-deployment, backend service are created as previous labs. These files are stored in /ocp directory.
