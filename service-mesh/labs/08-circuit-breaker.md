@@ -45,7 +45,7 @@ Scale pod to 2 by click upper arrow icon.
 
 ![scale up](../images/openshift-dev-console-scaleup.png)
 
-We will force one backend-v1 pod to return 504. This can be done by rsh into pod the curl to /stop (backend-v1 will always return 504 after receiving /stop. This is for demo)
+We will force one backend-v1 pod to return 504. This can be done by rsh into pod and then send a "curl" request to http://localhost:8080/stop within backend-v1 pod (backend-v1 will always return 504 after receiving /stop. This is for demo)
 
 Select one pod and connect to pod's terminal by using following oc command or OpenShift Web Console.
 
@@ -61,7 +61,7 @@ Backend version:v1, Response:200, Host:backend-v1-6ddf9c7dcf-sqxqz , Status:200,
 
 ```
 
-Then verify that pod will in previous step will return 504 when recieving request.
+After that, send again a new "curl" request to the pod in previous step and see it will return 504 when receiving request.
 
 ```bash
 oc exec -n $USERID -c backend $(oc get pod -n $USERID | grep -m1 backend | cut -d " " -f1) -- curl -s  -w "\nResponse Code:%{response_code}" http://localhost:8080
@@ -108,10 +108,16 @@ Backend:v1, Response Code: 504, Host:backend-v1-98f8c6c49-vk65z, Elapsed Time:0.
 
 ## Circuit Breaker and Pool Ejection
 
-Review the following Istio's destination rule configuration file [destination-rule-backend-circuit-breaker-with-pool-ejection.yml](../istio-files/destination-rule-backend-circuit-breaker-with-pool-ejection.yml)  to define circuit breaker and pool ejection with following configuration.
+Create and apply the following Istio's destination rule configuration file which is stored in [destination-rule-backend-circuit-breaker-with-pool-ejection.yml](../istio-files/destination-rule-backend-circuit-breaker-with-pool-ejection.yml)  to define circuit breaker and pool ejection with following configuration.
 
 ```yaml
-trafficPolicy:
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: backend-destination-rule
+spec:
+  host: backend
+  trafficPolicy:
       connectionPool:
         http: {}
         tcp: {}
@@ -123,8 +129,22 @@ trafficPolicy:
         interval: 15m
         maxEjectionPercent: 100
 ```
+Create and apply a VirtualService for backend
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: backend-virtual-service
+spec:
+  hosts:
+  - backend
+  http:
+  - route:
+    - destination:
+        host: backend
+```
 
-Explain traffice policy configuration:
+Explain traffic policy configuration:
 
 - Detect error with condition:
 - If found 1 consecutive error (consecutiveErrors)
@@ -132,12 +152,6 @@ Explain traffice policy configuration:
 - All of pods can be ejected (maxEjectionPercent)
 - check again within 15 minutes (interval)
 
-Apply destination rule to enable circuit breaker with pool ejection for backend service
-
-```bash
-oc apply -f istio-files/virtual-service-backend.yml -n $USERID
-oc apply -f istio-files/destination-rule-backend-circuit-breaker-with-pool-ejection.yml -n $USERID
-```
 
 Sample output
 
@@ -177,7 +191,7 @@ Check Kiali Graph
 
 ## Clean Up
 
-Run oc delete command to remove Istio policy.
+Run oc delete command to remove Istio policy. All the necessary resource yaml files are created and stored in /istio-files diretory.
 
 ```bash
 oc delete -f istio-files/destination-rule-backend-circuit-breaker-with-pool-ejection.yml -n $USERID
