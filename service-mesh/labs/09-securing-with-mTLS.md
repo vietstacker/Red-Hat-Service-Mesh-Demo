@@ -126,10 +126,12 @@ Backend version:v1,Response:200,Host:backend-v1-6ddf9c7dcf-vlcr9, Message: Hello
 ```
 
 ## Enable Mutual TLS for Backend Service
-
-Review the following Istio's authenticaiton rule configuration file [authentication-backend-enable-mtls.yml](../istio-files/authentication-backend-enable-mtls.yml)  to enable authenticaion with following configuration.
-
+Create a Policy resource that reflects the Istio's authentication rule. This file is stored as [authentication-backend-enable-mtls.yml](../istio-files/authentication-backend-enable-mtls.yml) 
 ```yaml
+apiVersion: "authentication.istio.io/v1alpha1"
+kind: "Policy"
+metadata:
+  name: authentication-backend-mtls
 spec:
   targets:
   - name: backend
@@ -139,14 +141,28 @@ spec:
   - mtls: {}
 ```
 
-Review the following Istio's destination rule configuration file [destination-rule-backend-v1-v2-mtls.yml](../istio-files/destination-rule-backend-v1-v2-mtls.yml)  to enable client side certification (Mutual TLS) with following configuration.
-
+Update/Create (if not existed) Istio's destination rule to enable client side certification (Mutual TLS) with following configuration. This file is stored as [destination-rule-backend-v1-v2-mtls.yml](../istio-files/destination-rule-backend-v1-v2-mtls.yml)  
 ```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: backend-destination-rule
+spec:
+  host: backend
   trafficPolicy:
       loadBalancer:
         simple: ROUND_ROBIN
       tls:
         mode: ISTIO_MUTUAL
+  subsets:
+  - name: v1
+    labels:
+      app: backend
+      version: v1
+  - name: v2
+    labels:
+      app: backend
+      version: v2
 ```
 
 Apply authentication, destination rule and virtual service to backend service
