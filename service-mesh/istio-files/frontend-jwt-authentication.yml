@@ -14,7 +14,7 @@ spec:
       issuer: "http://localhost:8080/auth/realms/quickstart"
       audiences:
       - "curl"
-      jwksUri: "https://gitlab.com/workshop6/service-mesh/raw/master/keycloak/jwks.json"
+      jwksUri: "https://github.com/vietstacker/Red-Hat-Service-Mesh-Demo/blob/master/service-mesh/keycloak/jwks.json"
       triggerRules:
       - excludedPaths:  
         - exact: /version
