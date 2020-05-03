@@ -1,6 +1,6 @@
 # Secure Service with Mutual TLS
 
-Mutual TLS is quite cubersome for develop to authenticate with client side certificate. Istio sidecar can automatically validate mutual TLS for communication within Mesh.
+Mutual TLS is quite cubersome for develop to authenticate with client side certificate. Istio sidecar can automatically validate mutual TLS for communication within Mesh. In mTLS, both client and server verifies eachother's certificates and uses them to encrypt traffic with TLS. The component takes care of certificate creation, management and maintenance is istio-citadel and propagates created certifiicates to all istio envoy proxies.
 
 <!-- TOC -->
 
@@ -16,7 +16,7 @@ Mutual TLS is quite cubersome for develop to authenticate with client side certi
 <!-- /TOC -->
 
 ## Setup
-
+Make sure that frontend-v1 deployment, frontend service/route, backend-v1/v2 and backend-service are deployed as previous examples. These file are stored in /ocp directory.
 ```bash
 oc apply -f ocp/frontend-v1-deployment.yml -n $USERID
 oc apply -f ocp/frontend-service.yml -n $USERID
@@ -27,8 +27,56 @@ oc apply -f ocp/backend-service.yml -n $USERID
 watch oc get pods -n $USERID
 ```
 
-Create another pod without sidecar for testing
+Create another pod without sidecar for testing.
 
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: station
+  annotations:
+    app.openshift.io/vcs-ref: master
+    app.openshift.io/vcs-uri: 'https://gitlab.com/ocp-demo/backend_quarkus.git'
+  labels:
+    app.kubernetes.io/component: station
+    app.kubernetes.io/instance: station
+    app.kubernetes.io/name: java
+    app.kubernetes.io/part-of: App-X
+    app.openshift.io/runtime: java
+    app.openshift.io/runtime-version: '8'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: station
+      version: v1
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: station
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "false" #no sidecar is injected
+    spec:
+      containers:
+      - name: backend
+        image: quay.io/voravitl/backend:v1
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "0.05"
+            memory: 40Mi
+          limits:
+            cpu: "0.2"
+            memory: 100Mi
+        env:
+          - name: app.backend
+            value: https://httpbin.org/status/200
+        ports:
+        - containerPort: 8080
+```
+This file is stored as ocp/station-deployment.yml
 
 ```bash
 oc apply -f ocp/station-deployment.yml -n $USERID
