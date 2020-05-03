@@ -15,7 +15,7 @@ Istio sidecar can validate JWT token as defined by RFC 7519. You can check more 
 
 ## Setup
 
-Create frontend and backend application (same as previous lab) along with Istio gateway,virtual service for frontend.
+Create frontend and backend application (same as previous lab) along with Istio gateway,virtual service for frontend. These files are stored in /ocp and /istio-files
 
 We need istio gateway because we want frontend app to authenticate by JWT token.
 
@@ -32,36 +32,44 @@ oc apply -f istio-files/frontend-gateway.yml -n $USERID
 ```
 
 ## Authentication Policy
-
-Review [frontend-jwt-authentication.yml](../istio-files/frontend-jwt-authentication.yml)
+Create a new Authentication Policy to Frontend service to support JWT token as below. This file is also stored in [frontend-jwt-authentication.yml](../istio-files/frontend-jwt-authentication.yml)
 
 ```yaml
+apiVersion: authentication.istio.io/v1alpha1
+kind: Policy
+metadata:
+  name: frontend-jwt-validation
 spec:
   targets:
   - name: frontend
     ports:
     - number: 8080
-  #If Frontend also enabled with mTLS. You need to specified peers with mtls
-  #peers:
-  #- mtls: {}
+  peers:
+  - mtls: {}
   origins:
   - jwt:
       issuer: "http://localhost:8080/auth/realms/quickstart"
       audiences:
       - "curl"
-      jwksUri: "https://gitlab.com/workshop6/service-mesh/raw/master/keycloak/jwks.json"
+      jwksUri: "https://github.com/vietstacker/Red-Hat-Service-Mesh-Demo/blob/master/service-mesh/keycloak/jwks.json"
       triggerRules:
-      - excludedPaths:  
+      - excludedPaths:
         - exact: /version
+        # includedPaths:
+        # - prefix: /some.path/
+  principalBinding: USE_PEER
+  # Get jwks from Keycloak/RHSSO
+  # curl http://localhost:8080/auth/realms/{Realm}/protocol/openid-connect/certs
+  # Login to Keycloak/RHSSO
+  # curl --location --request POST 'http://localhost:8080/auth/realms/${Realm}/protocol/openid-connect/token' --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'username=operator' --data-urlencode 'password=password' --data-urlencode 'client_id=curl' --data-urlencode 'grant_type=password'
 ```
 
 This authentication policy is configured with
 
 * Target service is frontend
 * Issuer (iss) must be http://localhost:8080/auth/realms/quickstart
-* URL of the provider’s public key set to validate signature of the JWT is located at https://gitlab.com/workshop6/service-mesh/raw/master/keycloak/jwks.json
+* URL of the provider’s public key set to validate signature of the JWT is located at "https://github.com/vietstacker/Red-Hat-Service-Mesh-Demo/blob/master/service-mesh/keycloak/jwks.json".
 
-Apply authentication policy 
 
 ```bash
 oc apply -f istio-files/frontend-jwt -n $USERID
