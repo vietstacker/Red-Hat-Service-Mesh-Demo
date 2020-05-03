@@ -165,7 +165,7 @@ spec:
       version: v2
 ```
 
-Apply authentication, destination rule and virtual service to backend service
+Make sure that the VirtualService of backend-v1/v2 with 50-50 traffic split is created. These file are stored in /istio-files
 
 ```bash
 oc apply -f istio-files/destination-rule-backend-v1-v2-mtls.yml -n $USERID
@@ -223,8 +223,55 @@ Because frontend pod is part of Service Mesh then authentication is sucessed.
 
 ## Enable Mutual TLS for Frontend Service
 
-Same as previous step for enable Mutual TLS to backend service. Enable mTLS with following command
+Same as previous step for enable Mutual TLS to backend service. We need to create an Policy, DestinationRule and VirtualService for Frontend.
 
+Policy.yaml
+```yaml
+apiVersion: "authentication.istio.io/v1alpha1"
+kind: "Policy"
+metadata:
+  name: authentication-frontend-mtls
+spec:
+  targets:
+  - name: frontend
+    ports:
+    - number: 8080
+  peers:
+  - mtls: {}
+```
+
+DestinationRule.yaml
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: frontend-destination-rule
+spec:
+  host: frontend
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    tls:
+      mode: ISTIO_MUTUAL
+```
+
+VirtualService.yaml
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: frontend-virtual-service
+spec:
+  hosts:
+  - '*'
+  gateways:
+  - frontend-gateway
+  http:
+  - route:
+    - destination:
+        host: frontend
+```
+These files are also stored in /istio-files
 ```bash
 oc apply -f istio-files/authentication-frontend-enable-mtls.yml -n $USERID
 oc apply -f istio-files/destination-rule-frontend-mtls.yml -n $USERID
@@ -291,25 +338,6 @@ You will get following error because OpenShift's router is not part of Service M
 curl: (52) Empty reply from server
 ```
 
-This can be solved by create Istio Ingress Gateway and connect to frontend with Istio Ingress Gateway.
-
-```bash
-oc apply -f istio-files/frontend-gateway.yml -n $USERID
-```
-
-Test again with cURL
-
-```bash
-curl $GATEWAY_URL
-#or
-scripts/run-50-gateway.sh
-```
-
-Sample output
-
-```bash
-Frontend version: v1 => [Backend: http://backend:8080, Response: 200, Body: Backend version:v2,Response:200,Host:backend-v2-7655885b8c-rt4jz, Message: Hello World!!]
-```
 Check Kiali Console
 
 ![Kiali Graph Secure](../images/kiali-mtls-secure.png)
